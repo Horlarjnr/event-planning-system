@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Environment variables (your real Supabase URL + keys live here)
+.env
+.env.local
+.env.*.local
+
+# Supabase CLI local state (created after `supabase link`)
+.supabase/
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Vite
+.vite/

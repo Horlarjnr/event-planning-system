@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+/* Class-based dark mode: toggled via ThemeContext adding/removing `dark` on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+body {
+  margin: 0;
+  background-color: #ffffff;
+  color: #111827;
+}
+
+.dark body {
+  background-color: #111827;
+  color: #f3f4f6;
+}
