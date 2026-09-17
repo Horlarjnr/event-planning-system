@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { getVenues } from '../../features/venues/venueService'
 import VenueCard from '../../components/shared/VenueCard'
@@ -10,12 +11,16 @@ import Button from '../../components/ui/Button'
 import type { Venue as VenueType, VenueFilters } from '../../types'
 
 export default function Venue() {
+  const [searchParams] = useSearchParams()
+  const initialLocation = searchParams.get('location') ?? undefined
+  const initialFilters: VenueFilters = initialLocation ? { location: initialLocation } : {}
+
   const [venues, setVenues] = useState<VenueType[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [draftFilters, setDraftFilters] = useState<VenueFilters>({})
-  const [appliedFilters, setAppliedFilters] = useState<VenueFilters>({})
+  const [draftFilters, setDraftFilters] = useState<VenueFilters>(initialFilters)
+  const [appliedFilters, setAppliedFilters] = useState<VenueFilters>(initialFilters)
 
   useEffect(() => {
     let cancelled = false

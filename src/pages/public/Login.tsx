@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
-import { signIn } from '../../features/auth/authService'
+import { signIn, getProfile } from '../../features/auth/authService'
+import { dashboardPathFor } from '../../components/layout/navConfig'
 import Logo from '../../components/layout/Logo'
 import Input from '../../components/ui/Input'
 import Button from '../../components/ui/Button'
@@ -20,8 +21,13 @@ export default function Login() {
     setError(null)
     setLoading(true)
     try {
-      await signIn({ email, password })
-      navigate('/')
+      const { user } = await signIn({ email, password })
+      if (user) {
+        const profile = await getProfile(user.id)
+        navigate(dashboardPathFor(profile?.role))
+      } else {
+        navigate('/')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
