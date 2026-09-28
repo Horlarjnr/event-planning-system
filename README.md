@@ -17,6 +17,10 @@ VenueDetails, Venue.tsx page). "Event Centre" is UI copy only.
    - `00000000000004_admin_and_availability_policies.sql` — admin full access, vendor CRUD on own listings, availability
    - `00000000000005_storage_setup.sql` — creates `listing-images` bucket + storage policies
    - `00000000000006_account_deletion.sql` — soft-delete column + `request_account_deletion()` RPC used by the profile pages' Danger Zone
+   - `0000000000000_fix_Handle_new_user_search.sql` — Fixes "type user_role does not exist" (Postgres error 42704) on signup.
+   - `00000000000008_enable_RLS_and_fix_policies.sql` — Enables Row Level Security on every table (fixes Supabase's "rls_disabled_in_public" warning) and repairs gaps in the earlier policies
+-- that would have broken the app or opened security holes once RLS is on.
+
 6. Register a test user through the app, then seed data:
    - Open `supabase/seed_example.sql`
    - Replace `REPLACE_WITH_REAL_PROFILE_ID` with a real profile id
