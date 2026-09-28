@@ -1,119 +1,371 @@
-# EventEase — Event Planning and Booking Management System
+# EventEase
 
-Brand: deep navy-blue (#0C447C) + amber accent (#854F0B). Logo: pin-check mark.
-Naming convention: everything in code/DB uses "Venue" (Venue type, venueService,
-VenueDetails, Venue.tsx page). "Event Centre" is UI copy only.
+> A web platform connecting customers with event centres and caterers for browsing and booking.
 
-## Setup
+**Live demo:** https://event-planning-system-six.vercel.app/
+**Demo video:** [TODO: paste video link]
 
-1. `npm install`
-2. Copy `.env.example` to `.env.local`, fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
-3. `supabase login`
-4. `supabase link --project-ref YOUR_REF`
-5. `supabase db push` — applies all 6 migrations in order:
-   - `00000000000001_initial_schema.sql` — enums + all 8 tables
-   - `00000000000002_handle_new_user_trigger.sql` — auto-creates profile on signup, reads role from signup metadata
-   - `00000000000003_rls_policies.sql` — core policies (profiles, public venue/caterer read, customer events/bookings, vendor bookings)
-   - `00000000000004_admin_and_availability_policies.sql` — admin full access, vendor CRUD on own listings, availability
-   - `00000000000005_storage_setup.sql` — creates `listing-images` bucket + storage policies
-   - `00000000000006_account_deletion.sql` — soft-delete column + `request_account_deletion()` RPC used by the profile pages' Danger Zone
-   - `0000000000000_fix_Handle_new_user_search.sql` — Fixes "type user_role does not exist" (Postgres error 42704) on signup.
-   - `00000000000008_enable_RLS_and_fix_policies.sql` — Enables Row Level Security on every table (fixes Supabase's "rls_disabled_in_public" warning) and repairs gaps in the earlier policies
--- that would have broken the app or opened security holes once RLS is on.
+<!-- TODO: add a banner or the home page screenshot here -->
 
-6. Register a test user through the app, then seed data:
-   - Open `supabase/seed_example.sql`
-   - Replace `REPLACE_WITH_REAL_PROFILE_ID` with a real profile id
-   - For real vendor-dashboard testing, run additional `update vendors set user_id = '...' where business_name = '...'` statements to spread the 10 seeded businesses across a few distinct real accounts (see inline comments in the seed file)
-7. To become an admin: manually run `update profiles set role = 'admin' where email = 'your-test-account@example.com';` — there is intentionally no public UI to self-assign admin
-8. `npm run dev`
+---
 
-## Feature status — ALL STAGES COMPLETE
+## Table of contents
 
-- **Stage 1** — Project setup (Vite + React + TS + Tailwind)
-- **Stage 2** — Supabase schema, 8 tables, trigger
-- **Stage 3** — Auth, role-based routing, protected routes
-- **Stage 4** — Public browsing: Home, Venues, Caterers, details pages, search/filter
-- **Stage 5** — Customer flow: multi-step event creation → venue → caterer → package → review → booking submission → My Bookings
-- **Stage 6** — Vendor: dashboard, accept/reject bookings, profile setup form, manage venues/caterer+packages (with image upload), manage venue availability, edit profile
-- **Stage 7** — Admin: dashboard with platform-wide counts, manage users (view/roles), manage vendors (approve/suspend), manage venues (delete), manage caterers (delete), manage bookings (view all)
-- **Stage 8** — Storage: `listing-images` bucket, `ImageUpload` component wired into venue/caterer forms
-- **Stage 9** — RLS: full policy set across all 8 tables + storage (see migration 3, 4, 5)
-- **Stage 10** — Responsive mobile nav added; see testing checklist below
+1. [Problem, solution and audience](#1-problem-solution-and-audience)
+2. [Features](#2-features)
+3. [Screenshots](#3-screenshots)
+4. [Tech stack](#4-tech-stack)
+5. [Setup instructions](#5-setup-instructions)
+6. [Test accounts](#6-test-accounts)
+7. [Project structure](#7-project-structure)
+8. [AI usage disclosure](#8-ai-usage-disclosure)
+9. [Learning and growth](#9-learning-and-growth)
+10. [Known limitations and future plans](#10-known-limitations-and-future-plans)
+11. [Development timeline](#11-development-timeline)
+12. [Credits](#12-credits)
 
-## Manual testing checklist (run this before considering it "done")
+---
 
-**Auth**
-- [ ] Register as customer → role is `customer` immediately, no manual fix needed
-- [ ] Register as vendor → role is `vendor` immediately
-- [ ] Login/logout works, session persists on refresh
+## 1. Problem, solution and audience
 
-**Customer flow**
-- [ ] Browse `/venues`, search + capacity + price filters work
-- [ ] Browse `/caterers`, search + cuisine filter works
-- [ ] View a venue's details, click "Book this venue"
-- [ ] Complete all 5 steps of event creation, submit
-- [ ] New booking appears in `/customer/bookings` with status "pending" and correct total
+### The problem
+Planning an event usually means chasing vendors across phone calls, DMs and spreadsheets. A customer has to find a venue, find a caterer, check that both are free and affordable, and then negotiate with each one separately. Vendors, in turn, receive requests through scattered channels and have no single place to manage them.
 
-**Vendor flow**
-- [ ] New vendor account with no business sees the profile setup form (not a blank page)
-- [ ] Submitting the form creates a `vendors` row with status "pending"
-- [ ] Vendor dashboard shows correct booking counts
-- [ ] "Manage services" lets a venue vendor add a venue (with image upload) and delete it
-- [ ] "Manage services" lets a caterer vendor create their profile + add/delete packages
-- [ ] "Manage availability" lets a venue vendor mark dates unavailable
-- [ ] Accept/decline a pending booking — status updates immediately, customer's My Bookings reflects it
+### The solution
+EventEase puts event centres (venues) and caterers on one platform. A customer can search and compare listings, then create an event and send a booking request for a venue and a caterer package in one guided flow. Vendors manage their own listings, availability and incoming requests from a dashboard, and an admin oversees the whole marketplace.
 
-**Admin flow**
-- [ ] Manually promote one account to `role = 'admin'`
-- [ ] Admin dashboard shows correct platform-wide counts
-- [ ] Approve a pending vendor → status flips to "approved"
-- [ ] Suspend an approved vendor → status flips to "suspended"
-- [ ] Delete a venue/caterer from admin — disappears from public `/venues` or `/caterers`
+Bookings are **requests**, not paid reservations. There is no online payment in this version, and a booking only becomes confirmed when the vendor accepts it.
 
-**Responsiveness**
-- [ ] Resize browser below 640px — navbar collapses into hamburger menu
-- [ ] Venue/caterer grids stack to a single column on mobile
-- [ ] Forms remain usable (no horizontal scroll) on a small viewport
+### Who it is for
 
-**RLS sanity checks**
-- [ ] A customer cannot see another customer's bookings (query `/customer/bookings` while logged in as two different accounts)
-- [ ] A vendor only sees bookings tied to their own venues/caterers, never someone else's
-- [ ] Logged-out visitors can still browse `/venues` and `/caterers` (public read works)
+| Audience | What they do on EventEase |
+|---|---|
+| **Customers** | Browse venues and caterers, plan an event, send booking requests, track their status |
+| **Vendors** (venue owners and caterers) | List their business, manage services and availability, accept or decline requests |
+| **Admins** | Approve or suspend vendors, moderate listings, oversee users and all bookings |
 
-## Deployment (Vercel)
+---
 
-1. Push this repo to GitHub
-2. In Vercel: New Project → import the repo
-3. Framework preset: Vite
-4. Add environment variables in Vercel project settings:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-5. Deploy. Vercel auto-detects `npm run build` and serves `dist/`
-6. In Supabase dashboard → Authentication → URL Configuration, add your Vercel domain to the allowed redirect URLs (needed for auth to work in production)
+## 2. Features
 
-## Update: Profile, account & UI polish pass
+### Customer
+- Register and log in; after login you land directly on your dashboard
+- Browse event centres with search, capacity and price filters
+- Browse caterers with search and cuisine filters
+- Venue and caterer detail pages (photos, facilities, packages)
+- Five-step booking flow: event details → venue → caterer → catering package → review and submit
+- **My Bookings** with live status (pending, confirmed, rejected, cancelled, completed)
+- Dashboard, profile page with avatar upload, notification bell for bookings awaiting a vendor
+- Light and dark mode
+- Account deletion (soft delete) from a confirmation-gated Danger Zone
 
-This revision added a full profile/account system on top of the existing app, without touching any working booking/vendor/admin logic.
+### Vendor
+- Guided business profile setup on first login (venue or caterer)
+- Dashboard with booking counts, a status donut chart and a weekly bookings chart
+- Accept or decline incoming booking requests
+- Manage venues, or a caterer profile with catering packages, including image upload
+- Manage venue availability by marking dates unavailable
+- Edit business and personal profile
 
-**New — run this migration too:**
-- `00000000000006_account_deletion.sql` — adds `profiles.deleted_at` + a `request_account_deletion()` RPC. Run `supabase db push` again to pick it up. Until this is applied, the "Delete account" button will show a clear error instead of silently doing nothing.
-- `supabase/functions/delete-account/` — optional Edge Function stub for a true hard-delete (purges the `auth.users` row, which cascades via existing FKs). Not required for the app to work; see the comment header in that file for deploy steps if you want full data purge later instead of the soft-delete above.
+### Admin
+- Dashboard with platform-wide counts
+- Manage users
+- Approve or suspend vendors
+- Remove venues and caterers
+- View all bookings with a status filter
 
-**New for every role (customer, vendor, admin):**
-- A real "Profile" page — avatar upload with type/size validation, remove photo, edit name/phone, and a Danger Zone with a confirmation-dialog-gated "Delete account".
-- Vendor's Profile page now has both the personal Account section (new) and the existing Business profile section on one page.
-- Avatars now show everywhere a user is represented — navbar (with a proper dropdown menu), dashboard sidebar/footer, mobile top bar — falling back to initials when no photo is set.
-- A notification bell (desktop header + mobile top bar) surfaces each role's pending items: customers see bookings awaiting vendor confirmation, vendors see new booking requests, admins see vendors awaiting approval. It's sourced from data each dashboard already fetches — no new queries.
-- Logo is now an icon mark (navy circle + pin) instead of a plain dot, matching the brand mark; still a single component (`Logo.tsx`), so swapping in a raster logo file later only means editing that one file.
-- Login/Register password fields now have a show/hide toggle.
+### Cross-cutting
+- Role-based routing with protected routes (customer, vendor, admin)
+- Automatic profile creation on signup, with the role read from signup metadata
+- Row Level Security on every table, plus triggers that stop users promoting themselves to admin or approving their own vendor account
+- Route-level code splitting (lazy loading) to keep the initial bundle small
+- Responsive layout with a mobile navigation menu
 
-Everything above is wired to real Supabase calls (`profiles` table update, storage upload, the new RPC) — nothing is mocked or fake-succeeds.
+---
 
+## 3. Screenshots
 
+<!-- TODO: add real screenshots to docs/screenshots/ and keep the file names below (or update the links). -->
 
-- No online payments — bookings are explicitly "requests," per spec
-- No ratings/reviews — no ratings column in schema; spec says don't fake them
-- No messaging, decorators, photographers, DJs, etc. — explicitly future enhancements
-- Vendor `user_id` linkage for seeded demo data must be manually assigned via SQL (see seed file) — a real vendor signing up through the app does not need this step, it's only a seed-data artifact
-- Storage RLS policies are permissive for any authenticated user (not scoped per-vendor-folder) — acceptable for MVP trust level, worth tightening if this goes to real production with untrusted vendors
+| Home page | Booking flow |
+|---|---|
+| ![Home page](docs/screenshots/home.png) | ![Booking flow](docs/screenshots/booking-flow.png) |
+
+| Customer dashboard | Vendor dashboard |
+|---|---|
+| ![Customer dashboard](docs/screenshots/customer-dashboard.png) | ![Vendor dashboard](docs/screenshots/vendor-dashboard.png) |
+
+| Admin dashboard | |
+|---|---|
+| ![Admin dashboard](docs/screenshots/admin-dashboard.png) | |
+
+---
+
+## 4. Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, Vite 8, TypeScript 5 |
+| Styling | Tailwind CSS 4 (`@tailwindcss/vite`) |
+| Routing | React Router 7 |
+| Icons | Lucide React |
+| Backend | Supabase: PostgreSQL, Auth, Storage, Row Level Security, database functions (RPC) |
+| Tooling | ESLint, Supabase CLI (installed as a dev dependency) |
+| Deployment | Vercel (with a rewrite rule for client-side routing) |
+
+---
+
+## 5. Setup instructions
+
+### Prerequisites
+
+- **Node.js** `^20.19.0` or `>=22.12.0` (required by Vite 8) and npm
+- **Git**
+- A free **Supabase account** ([supabase.com](https://supabase.com))
+- **Supabase CLI**: no global install needed. It is a dev dependency, so run it with `npx supabase ...`
+
+### 1. Clone and install
+
+```bash
+git clone [TODO: your repository URL]
+cd event-planning-system
+npm install
+```
+
+### 2. Create a Supabase project
+
+1. In the Supabase dashboard, create a new project and note the **database password** you choose.
+2. Go to **Authentication → Sign In / Providers → Email** and turn **off** "Confirm email". The app signs users up and sends them straight to the login page, so email confirmation must be disabled.
+3. Go to **Authentication → URL Configuration** and set the **Site URL** to `http://localhost:5173`. Add your deployed URL here later.
+4. Go to **Settings → API** and copy the **Project URL** and the **anon public key**.
+
+### 3. Environment variables
+
+Copy the example file and fill in your own values. Never commit real keys; `.env.local` is git-ignored.
+
+```bash
+cp .env.example .env.local
+```
+
+| Variable | Where to find it |
+|---|---|
+| `VITE_SUPABASE_URL` | Supabase → Settings → API → Project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase → Settings → API → anon public key |
+
+### 4. Apply the database migrations
+
+```bash
+npx supabase login
+npx supabase link --project-ref YOUR_PROJECT_REF   # the ID in your project URL
+npx supabase db push                               # asks for your database password
+```
+
+`db push` applies every file in `supabase/migrations/` in order:
+
+| Migration | Purpose |
+|---|---|
+| `00000000000001_initial_schema.sql` | Enum types and all eight tables |
+| `00000000000002_handle_new_user_trigger.sql` | Creates a `profiles` row automatically on signup |
+| `00000000000003_rls_policies.sql` | Core row-level policies |
+| `00000000000004_admin_and_availability_policies.sql` | Admin access, vendor management of own listings, availability |
+| `00000000000005_storage_setup.sql` | `listing-images` storage bucket and its policies |
+| `00000000000006_account_deletion.sql` | Soft-delete column and `request_account_deletion()` RPC |
+| `00000000000007_fix_handle_new_user_search_path.sql` | Fixes the signup trigger failing with `type "user_role" does not exist` |
+| `00000000000008_enable_rls_and_fix_policies.sql` | Turns RLS on for all tables, fixes recursive admin policies, blocks role/status self-escalation |
+
+The storage bucket is created by migration 005, so there is nothing to create manually in the dashboard.
+
+### 5. Run locally
+
+```bash
+npm run dev
+```
+
+Open http://localhost:5173.
+
+Other scripts: `npm run build` (production build), `npm run preview` (serve the build), `npm run lint`.
+
+### 6. Create your local test accounts
+
+Your local Supabase project starts empty, so there are no users yet.
+
+1. Register two accounts in the app: one as **Customer**, one as **Vendor**.
+2. Promote a third registered account to admin (there is intentionally no UI for this). Run this in the Supabase **SQL editor**:
+
+   ```sql
+   update profiles set role = 'admin' where email = 'your-admin-account@example.com';
+   ```
+3. *(Optional)* Load demo listings: open `supabase/seed_example.sql`, replace the placeholder vendor `user_id` values with the real IDs of your vendor accounts, and run it in the SQL editor.
+4. Log in as the vendor to complete the business profile setup, then add a venue or caterer package. Log in as the customer to book it, and back as the vendor to accept the request.
+
+---
+
+## 6. Test accounts
+
+These accounts exist on the **hosted demo** ([event-planning-system-six.vercel.app](https://event-planning-system-six.vercel.app/)) so every flow can be tried without registering.
+
+| Role | Email | Password |
+|---|---|---|
+| Customer | [TODO: email] | [TODO: password] |
+| Vendor | [TODO: email] | [TODO: password] |
+| Admin | [TODO: email] | [TODO: password] |
+
+> These are throwaway demo accounts for judging only. To run the project locally, follow step 6 above to create your own.
+
+**Suggested walkthrough**
+1. Log in as **Customer** → Event Centres → pick a venue → *Book this venue* → complete the five steps → check **My Bookings** (status: pending).
+2. Log in as **Vendor** → Dashboard → **Accept** the request.
+3. Log in as **Admin** → review vendors, listings and all bookings.
+
+---
+
+## 7. Project structure
+
+```
+event-planning-system/
+├── supabase/
+│   ├── migrations/          # SQL schema, triggers, RLS, storage (applied with the CLI)
+│   ├── functions/           # optional Edge Function stub for hard account deletion
+│   └── seed_example.sql     # optional demo data
+├── src/
+│   ├── components/          # ui/, layout/, shared/ building blocks
+│   ├── features/            # one service file per domain (auth, venues, caterers, events, bookings, ...)
+│   ├── pages/               # public/, customer/, vendor/, admin/
+│   ├── routes/              # AppRoutes (lazy-loaded) and ProtectedRoute
+│   ├── context/             # AuthContext, ThemeContext
+│   ├── lib/supabaseClient.ts
+│   └── types/
+├── vercel.json              # rewrite so deep links work with React Router
+└── .env.example
+```
+
+---
+
+## 8. AI usage disclosure
+
+This project was built with **significant AI assistance**. I used **Claude (Anthropic)** in a chat interface throughout the build.
+
+### What AI helped with
+- **Planning and scaffolding:** breaking the build into ten stages, proposing the database schema and initial project scaffold
+- **Code generation:** most React/TypeScript pages, service files and UI components, and the SQL for migrations, triggers and RLS policies
+- **Debugging:** reading error messages and Postgres logs I pasted in, and proposing fixes (for example the signup trigger failure and the RLS problems described below)
+- **Refactors:** route-level lazy loading, the post-login redirect, the landing page hero card
+- **Deployment guidance:** Vercel setup, environment variables and the SPA rewrite rule
+- **Writing:** this README and my launch posts
+
+### What I did myself
+- Came up with the idea, chose the scope and decided what the MVP would *not* include (payments, chat, reviews, and so on)
+- Chose the stack, the ten-stage plan, the folder structure, and the brand (colours and logo)
+- Created and configured the Supabase project, and ran the CLI, migrations and deployment myself
+- Tested every flow by hand across the customer, vendor and admin roles, and reported what broke
+- Made the product decisions along the way, such as keeping the landing page card static, turning off email confirmation for easy testing, and enabling RLS after Supabase's security warning
+
+### What I learned
+<!-- TODO: rewrite the points below in your own words, and add anything you understand now that you didn't before. -->
+- How Supabase Auth, the `profiles` table and a database trigger fit together, and why the trigger runs in a different `search_path`
+- What Row Level Security actually does, and that writing policies is not the same as enabling RLS
+- How to read Postgres logs to find the real error behind a vague message
+- How migrations make a database reproducible: I rebuilt the whole backend on a fresh project by re-running them
+- Why security rules belong in the database, not only in the UI
+
+---
+
+## 9. Learning and growth
+
+### Challenges and how I dealt with them
+
+**1. The TypeScript template mix-up.** I planned to build in plain JavaScript, but the Vite template I scaffolded from was the TypeScript one. Rather than restart, I kept TypeScript and defined shared types in `src/types`, which made the Supabase data shapes much clearer.
+
+**2. CLI-first migrations and rebuilding the backend.** After deleting my first Supabase project, I recreated everything from the migration files with `supabase link` and `supabase db push`. That only worked because the schema lived in versioned SQL rather than in dashboard clicks.
+
+**3. "Database error saving new user."** After the rebuild, every signup failed. The Postgres logs showed `type "user_role" does not exist`. The enum did exist, but the auth trigger ran with a `search_path` that didn't include `public`. The fix (migration 007) was to schema-qualify the type and pin the function's `search_path`.
+
+**4. RLS policies that weren't switched on, and then didn't work.** I had written a full set of RLS policies but never ran `ENABLE ROW LEVEL SECURITY`, so the tables were open to anyone with the project URL. Supabase flagged it as a critical `rls_disabled_in_public` issue. Reviewing the policies before enabling them exposed real bugs:
+- admin policies queried `profiles` from inside a policy on `profiles`, causing infinite recursion (fixed with a `SECURITY DEFINER` `is_admin()` function)
+- the "update own profile" policy would have let any user set their own role to `admin` (fixed with a trigger)
+- vendors could not read the `events` behind their bookings, and had no policy to edit their own profile
+- vendors could have approved themselves, and customers could have inserted bookings as `confirmed`
+
+Migration 008 fixes all of these and then enables RLS.
+
+**5. A "permanent" landing page card.** The hero card was showing whichever venue was created most recently, so my test data ended up on the home page. I replaced it with static content so it no longer depends on live data.
+
+**6. Bundle size.** The production build warned that a chunk was over 500 kB. I converted the routes to `React.lazy` with a `Suspense` fallback so each page loads only when visited.
+
+**7. Deep links on Vercel.** Client-side routes return 404 on a refresh unless the host rewrites them, so I added `vercel.json` with a rewrite to `index.html`.
+
+**8. Feedback that shaped the design.** Someone on LinkedIn pointed out the scheduling gap in booking: a pending request doesn't hold a date, so two customers can request the same slot. That fed directly into the roadmap below.
+
+### What I'd do next
+See [Known limitations and future plans](#10-known-limitations-and-future-plans). The next priorities are date holds with automatic expiry of unanswered requests, customer-side cancellation, reviews and ratings, and email notifications.
+
+---
+
+## 10. Known limitations and future plans
+
+Being upfront about what isn't finished:
+
+**Limitations**
+- **No online payments.** Bookings are requests only; there is no payment gateway.
+- **Pending requests don't hold a date and never expire.** Two customers can request the same venue and date, and a request stays pending until the vendor acts. Adding a hold with automatic expiry is my next task.
+- **Prices are calculated in the browser.** A determined user could send a manipulated total. Totals should be computed server-side.
+- **Customers cannot cancel a booking** from the UI yet.
+- **No ratings or reviews**, so the platform shows no fabricated ratings. The stats on some marketing sections are placeholders.
+- **Storage policies are permissive** for any authenticated user (not scoped to a vendor's own folder), which is acceptable for an MVP but should be tightened.
+- **Account deletion is a soft delete.** Fully removing the `auth.users` row needs the service-role key via the optional Edge Function in `supabase/functions/delete-account`.
+- **No About or Contact pages** and no email notifications yet.
+- **No automated tests.** Everything was tested manually with the checklist in this repo's history.
+- **Demo listing photos are stock placeholders**, and the seed file needs real vendor IDs before it can be run.
+
+**Future plans**
+1. Date holds and automatic expiry for pending booking requests
+2. Customer cancellation of bookings
+3. Reviews and ratings after a completed booking
+4. Email notifications for vendors and customers (Supabase Edge Function)
+5. Availability-aware search (filter venues by date)
+6. Saved favourites, multiple photos per listing, a vendor calendar view
+7. Server-side pricing and automated tests
+
+---
+
+## 11. Development timeline
+
+> The Git history is short (3 commits). The build log below is a truer picture of how the work progressed; the numbered migration files also record the order in which the backend took shape.
+
+| When | Milestone |
+|---|---|
+| [TODO: start date] | Idea, scope and the ten-stage build plan; project scaffold (Vite + React + TypeScript + Tailwind) |
+| [TODO: date] | Supabase schema, signup trigger, authentication and role-based routing |
+| [TODO: date] | Public browsing, customer booking flow, vendor and admin dashboards, image storage |
+| [TODO: date] | Profile/account system, notification bell, responsive polish |
+| 14 Sep 2026 | Rebuilt the backend on a fresh Supabase project using CLI migrations; fixed the signup trigger (migration 007) |
+| [TODO: date] | Deployed to Vercel: https://event-planning-system-six.vercel.app/ |
+| 19 Sep 2026 | Supabase flagged RLS as disabled; reviewed and rewrote the policies and enabled RLS (migration 008) |
+| [TODO: date] | Route-level lazy loading, post-login dashboard redirect, README |
+
+---
+
+## 12. Credits
+
+**Libraries and frameworks**
+- [React](https://react.dev/) and [React Router](https://reactrouter.com/)
+- [Vite](https://vite.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Supabase](https://supabase.com/) (PostgreSQL, Auth, Storage, CLI) and `@supabase/supabase-js`
+- [Lucide React](https://lucide.dev/) for icons
+- [ESLint](https://eslint.org/)
+
+**Hosting:** [Vercel](https://vercel.com/)
+
+**Fonts:** none loaded; the app uses the system font stack.
+
+**Images:** demo venue and caterer photos are stock images from [Unsplash](https://unsplash.com/) used as placeholders. [TODO: add photographer credits for any images you keep.]
+
+**Original work:** the EventEase name, logo and colour palette, the database design, and the application code (with AI assistance, as disclosed above). The bar and donut charts are small custom components, not a chart library.
+
+**AI assistance:** Claude by [Anthropic](https://www.anthropic.com/), see [AI usage disclosure](#8-ai-usage-disclosure).
+
+---
+
+*Built by [TODO: your name] as [TODO: hackathon / final year project name].*
