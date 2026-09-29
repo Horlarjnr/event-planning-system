@@ -3,9 +3,8 @@
 > A web platform connecting customers with event centres and caterers for browsing and booking.
 
 **Live demo:** https://event-planning-system-six.vercel.app/
-**Demo video:** [TODO: paste video link]
+**Demo video:** [ : paste video link]
 
-<!-- TODO: add a banner or the home page screenshot here -->
 
 ---
 
@@ -85,19 +84,17 @@ Bookings are **requests**, not paid reservations. There is no online payment in 
 
 ## 3. Screenshots
 
-<!-- TODO: add real screenshots to docs/screenshots/ and keep the file names below (or update the links). -->
-
 | Home page | Booking flow |
 |---|---|
-| ![Home page](docs/screenshots/home.png) | ![Booking flow](docs/screenshots/booking-flow.png) |
+| ![Home page](src\docs\screenshots\Home.png) | ![Booking flow](src\docs\screenshots\Bookingflow.png) |
 
 | Customer dashboard | Vendor dashboard |
 |---|---|
-| ![Customer dashboard](docs/screenshots/customer-dashboard.png) | ![Vendor dashboard](docs/screenshots/vendor-dashboard.png) |
+| ![Customer dashboard](src\docs\screenshots\customerdashboard.png) | ![Vendor dashboard](src\docs\screenshots\Vendordashboard.png) |
 
 | Admin dashboard | |
 |---|---|
-| ![Admin dashboard](docs/screenshots/admin-dashboard.png) | |
+| ![Admin dashboard](src\docs\screenshots\admindashboard.png) | |
 
 ---
 
@@ -127,7 +124,7 @@ Bookings are **requests**, not paid reservations. There is no online payment in 
 ### 1. Clone and install
 
 ```bash
-git clone [TODO: your repository URL]
+git clone https://github.com/Horlarjnr/event-planning-system
 cd event-planning-system
 npm install
 ```
@@ -206,11 +203,9 @@ These accounts exist on the **hosted demo** ([event-planning-system-six.vercel.a
 
 | Role | Email | Password |
 |---|---|---|
-| Customer | [TODO: email] | [TODO: password] |
-| Vendor | [TODO: email] | [TODO: password] |
-| Admin | [TODO: email] | [TODO: password] |
-
-> These are throwaway demo accounts for judging only. To run the project locally, follow step 6 above to create your own.
+| Customer | olayemimotin2021@gmail.com | Olaola@77 |
+| Vendor | olayemimotin2020@gmail.com | Olaola@77 |
+| Admin | olayemimotin2019@gmail.com | Olaola@77 |
 
 **Suggested walkthrough**
 1. Log in as **Customer** → Event Centres → pick a venue → *Book this venue* → complete the five steps → check **My Bookings** (status: pending).
@@ -251,7 +246,7 @@ This project was built with **significant AI assistance**. I used **Claude (Anth
 - **Debugging:** reading error messages and Postgres logs I pasted in, and proposing fixes (for example the signup trigger failure and the RLS problems described below)
 - **Refactors:** route-level lazy loading, the post-login redirect, the landing page hero card
 - **Deployment guidance:** Vercel setup, environment variables and the SPA rewrite rule
-- **Writing:** this README and my launch posts
+
 
 ### What I did myself
 - Came up with the idea, chose the scope and decided what the MVP would *not* include (payments, chat, reviews, and so on)
@@ -261,7 +256,7 @@ This project was built with **significant AI assistance**. I used **Claude (Anth
 - Made the product decisions along the way, such as keeping the landing page card static, turning off email confirmation for easy testing, and enabling RLS after Supabase's security warning
 
 ### What I learned
-<!-- TODO: rewrite the points below in your own words, and add anything you understand now that you didn't before. -->
+
 - How Supabase Auth, the `profiles` table and a database trigger fit together, and why the trigger runs in a different `search_path`
 - What Row Level Security actually does, and that writing policies is not the same as enabling RLS
 - How to read Postgres logs to find the real error behind a vague message
@@ -334,14 +329,14 @@ Being upfront about what isn't finished:
 
 | When | Milestone |
 |---|---|
-| [TODO: start date] | Idea, scope and the ten-stage build plan; project scaffold (Vite + React + TypeScript + Tailwind) |
-| [TODO: date] | Supabase schema, signup trigger, authentication and role-based routing |
-| [TODO: date] | Public browsing, customer booking flow, vendor and admin dashboards, image storage |
-| [TODO: date] | Profile/account system, notification bell, responsive polish |
+| [16 Aug 2026] | Idea, scope and the ten-stage build plan; project scaffold (Vite + React + TypeScript + Tailwind) |
+| [22 Aug, 2026] | Supabase schema, signup trigger, authentication and role-based routing |
+| [26 Aug, 2026] | Public browsing, customer booking flow, vendor and admin dashboards, image storage |
+| [03 Sep, 2026] | Profile/account system, notification bell, responsive polish |
 | 14 Sep 2026 | Rebuilt the backend on a fresh Supabase project using CLI migrations; fixed the signup trigger (migration 007) |
-| [TODO: date] | Deployed to Vercel: https://event-planning-system-six.vercel.app/ |
+| [16 Sep, 2026] | Deployed to Vercel: https://event-planning-system-six.vercel.app/ |
 | 19 Sep 2026 | Supabase flagged RLS as disabled; reviewed and rewrote the policies and enabled RLS (migration 008) |
-| [TODO: date] | Route-level lazy loading, post-login dashboard redirect, README |
+| [28 Sep, 2026] | Route-level lazy loading, post-login dashboard redirect, README |
 
 ---
 
@@ -360,7 +355,7 @@ Being upfront about what isn't finished:
 
 **Fonts:** none loaded; the app uses the system font stack.
 
-**Images:** demo venue and caterer photos are stock images from [Unsplash](https://unsplash.com/) used as placeholders. [TODO: add photographer credits for any images you keep.]
+**Images:** demo venue and caterer photos are stock images from [Unsplash](https://unsplash.com/) used as placeholders. 
 
 **Original work:** the EventEase name, logo and colour palette, the database design, and the application code (with AI assistance, as disclosed above). The bar and donut charts are small custom components, not a chart library.
 
@@ -368,4 +363,4 @@ Being upfront about what isn't finished:
 
 ---
 
-*Built by [TODO: your name] as [TODO: hackathon / final year project name].*
+*Built by Olayemi Motin Oladipupo as Beginners Paradise (A Hackathon by FirstCommit).*
